@@ -58,7 +58,7 @@ namespace path_smoothing
   {
     ros::NodeHandle pnh("~/" + name);
 
-    pnh.param("points_per_unit", pointsPerUnit_, 5.0);
+    pnh.param("points_per_unit", pointsPerUnit_, 1.0);
     pnh.param<bool>("use_end_conditions", useEndConditions_, false);
     pnh.param<bool>("use_middle_conditions", useMiddleConditions_, false);
 

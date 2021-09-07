@@ -38,16 +38,39 @@
 #include "path_smoothing_ros/cubic_spline_interpolator.h"
 #include <tf/tf.h>
 
+ros::Publisher smoothedPathPub;
+
+void path_callback(const nav_msgs::PathPtr& msg)
+{
+  nav_msgs::Path path, smoothedPath;
+  path.header.frame_id = "map";
+  geometry_msgs::PoseStamped pose;
+  pose.header.frame_id = "map";
+
+  for (int i = 0; i < msg->poses.size(); i++)
+  {
+    pose.pose.position.x = static_cast<double>(msg->poses[i].pose.position.x);
+    pose.pose.position.y = static_cast<double>(msg->poses[i].pose.position.y);
+    pose.pose.orientation = msg->poses[i].pose.orientation;
+    path.poses.push_back(pose);
+  }
+
+  // create a cubic spline interpolator
+  path_smoothing::CubicSplineInterpolator csi("lala");
+    // pointsPerUnit, skipPoints, useEndConditions, useMiddleConditions);
+  csi.interpolatePath(path, smoothedPath);
+
+  smoothedPathPub.publish(smoothedPath);
+}
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "path_smoothing_ros_demo");
-  ros::NodeHandle nh("~");
-  ROS_INFO_STREAM("Namespace:" << nh.getNamespace());
+  ros::NodeHandle nh;
 
-  ros::Publisher initialPosePub = nh.advertise<geometry_msgs::PoseStamped>("initial_pose", 1, true);
-  ros::Publisher finalPosePub = nh.advertise<geometry_msgs::PoseStamped>("final_pose", 1, true);
-  ros::Publisher pathPub = nh.advertise<nav_msgs::Path>("initial_path", 1, true);
-  ros::Publisher smoothedPathPub = nh.advertise<nav_msgs::Path>("smoothed_path", 1, true);
+  smoothedPathPub = nh.advertise<nav_msgs::Path>("smoothed_path", 1, true);
+
+  ros::Subscriber raw_sub = nh.subscribe("raw_path",1000,path_callback);
 
   int pointsPerUnit, skipPoints;
   bool useEndConditions, useMiddleConditions;
@@ -57,42 +80,7 @@ int main(int argc, char** argv)
   nh.param<bool>("use_end_conditions", useEndConditions, false);
   nh.param<bool>("use_middle_conditions", useMiddleConditions, false);
 
-  XmlRpc::XmlRpcValue poseList;
-  if (!nh.getParam("path_poses", poseList))
-  {
-    ROS_FATAL("Failed to load path point list");
-    exit(EXIT_FAILURE);
-  }
-
-  nav_msgs::Path path, smoothedPath;
-  path.header.frame_id = "map";
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = "map";
-
-  for (int i = 0; i < poseList.size(); i++)
-  {
-    pose.pose.position.x = static_cast<double>(poseList[i]["x"]);
-    pose.pose.position.y = static_cast<double>(poseList[i]["y"]);
-    pose.pose.orientation = tf::createQuaternionMsgFromYaw(poseList[i]["yaw"]);
-    path.poses.push_back(pose);
-  }
-
-  // create a cubic spline interpolator
-  path_smoothing::CubicSplineInterpolator csi("lala");
-    // pointsPerUnit, skipPoints, useEndConditions, useMiddleConditions);
-  csi.interpolatePath(path, smoothedPath);
-
-  initialPosePub.publish(path.poses.front());
-  finalPosePub.publish(path.poses.back());
-  pathPub.publish(path);
-  smoothedPathPub.publish(smoothedPath);
-
-  ros::Time currTime = ros::Time::now();
-
-  while (ros::ok() && ros::Time::now().toSec() - currTime.toSec() < 2.0)
-  {
-    ros::spinOnce();
-  }
+  ros::spin();
 
   return 0;
 }
