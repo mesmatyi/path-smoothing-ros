@@ -76,9 +76,9 @@ int main(int argc, char** argv)
   bool useEndConditions, useMiddleConditions;
 
   nh.param<int>("points_per_unit", pointsPerUnit, 5);
-  nh.param<int>("skip_points", skipPoints, 0);
-  nh.param<bool>("use_end_conditions", useEndConditions, false);
-  nh.param<bool>("use_middle_conditions", useMiddleConditions, false);
+  nh.param<int>("skip_points", skipPoints, 2);
+  nh.param<bool>("use_end_conditions", useEndConditions, true);
+  nh.param<bool>("use_middle_conditions", useMiddleConditions, true);
 
   ros::spin();
 

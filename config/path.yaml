@@ -1,5 +1,5 @@
-points_per_unit: 5
-skip_points: 1
+points_per_unit: 1
+skip_points: 100
 use_end_conditions: True
 use_middle_conditions: False
 
